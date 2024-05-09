@@ -257,11 +257,22 @@ bool TimeCache::insertData(const TransformStorage & new_data)
   // Find the oldest element in the list before the incoming stamp.
   auto last_transform_pos = std::find_if(
     storage_.begin(), storage_.end(), [&](const auto & transfrom) {
-      return transfrom.stamp_ <= new_data.stamp_;
+      return transfrom.stamp_ < new_data.stamp_;
     });
 
+  // Search only along data with same timestamp (sorted), and check if this exact
+  // data is already present.
+  bool already_present = false;
+  while (last_transform_pos != storage_.end() && last_transform_pos->stamp_ == new_data.stamp_) {
+    if (*last_transform_pos == new_data) {
+      already_present = true;
+      break;
+    }
+    ++last_transform_pos;
+  }
+
   // Insert elements only if not already present
-  if (std::find(storage_.begin(), storage_.end(), new_data) == storage_.end()) {
+  if (!already_present) {
     storage_.insert(last_transform_pos, new_data);
   }
 
